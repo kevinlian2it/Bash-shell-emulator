@@ -77,8 +77,8 @@ char *get_next_token(char *input, int *pos) {
         token = malloc(token_len + 1);
         if (token == NULL) {
             fprintf(stderr, "Error: malloc() failed. %s.\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }
+            return NULL;
+	}
         int token_pos = 0;
         for (int i = start; i < *pos; i++) {
             if (input[i] != '\"') {
@@ -131,8 +131,6 @@ void run_shell() {
     	input[strcspn(input, "\n")] = 0;
     	if (!check_quotes_balance(input)) {
         	printf("Error: Unbalanced quotes, there must be an even number of quotes.\n");
-        	printf("Exiting...\n");
-        	exit(EXIT_FAILURE);
     	}
 
     	int pos = 0;
@@ -151,11 +149,10 @@ void run_shell() {
             		free(path);
         	}
     	} else {
-        	pid_t pid = fork();
+        	fflush(stdin);
+		pid_t pid = fork();
         	if (pid < 0) {
             		fprintf(stderr, "Error: fork() failed. %s.\n", strerror(errno));
-			free(command);
-			exit(EXIT_FAILURE);
         	} else if (pid == 0) {
         	    	if (signal(SIGINT, SIG_DFL) == SIG_ERR) {
         			fprintf(stderr, "Error: Cannot reset signal handler. %s.\n", strerror(errno));
@@ -178,9 +175,9 @@ void run_shell() {
             		args[i] = NULL;
             		if (execvp(command, args) == -1) {
                 		fprintf(stderr, "Error: exec() failed. %s.\n", strerror(errno));
-                		free(command);
+            			free(command);
 				exit(EXIT_FAILURE);
-            		}
+			}
         	} else {
             		int status;
             		if (waitpid(pid, &status, 0) < 0) {
