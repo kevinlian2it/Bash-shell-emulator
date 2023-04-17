@@ -157,11 +157,13 @@ void run_shell() {
         	pid_t pid = fork();
         	if (pid < 0) {
             		fprintf(stderr, "Error: fork() failed. %s.\n", strerror(errno));
-            		exit(EXIT_FAILURE);
+			free(command);
+			exit(EXIT_FAILURE);
         	} else if (pid == 0) {
         	    	if (signal(SIGINT, SIG_DFL) == SIG_ERR) {
         			fprintf(stderr, "Error: Cannot reset signal handler. %s.\n", strerror(errno));
-        			exit(EXIT_FAILURE);
+        			free(command);
+				exit(EXIT_FAILURE);
     			}	
 			char *args[MAX_INPUT_SIZE] = {command};
             		int i = 1;
@@ -173,12 +175,14 @@ void run_shell() {
             		}
             		if (num_tokens > MAX_NUM_TOKENS) {
                 		printf("Error: Too many tokens in the input. Maximum allowed tokens: %d\n", MAX_NUM_TOKENS);
-                		exit(EXIT_FAILURE);
+                		free(command);
+				exit(EXIT_FAILURE);
             		}
             		args[i] = NULL;
             		if (execvp(command, args) == -1) {
                 		fprintf(stderr, "Error: exec() failed. %s.\n", strerror(errno));
-                		exit(EXIT_FAILURE);
+                		free(command);
+				exit(EXIT_FAILURE);
             		}
         	} else {
             		int status;
