@@ -55,6 +55,11 @@ char *get_next_token(char *input, int *pos) {
     char *token;
     int token_len = 0;
     int in_quotes = 0;
+    
+    while (input[start] == ' ') {
+        start++;
+        (*pos)++;
+    }
     while (input[*pos] != '\0') {
         if (input[*pos] == '\"') {
 	    if(in_quotes == 0) {
@@ -131,7 +136,8 @@ void run_shell() {
     	input[strcspn(input, "\n")] = 0;
     	if (!check_quotes_balance(input)) {
         	printf("Error: Unbalanced quotes, there must be an even number of quotes.\n");
-    	}
+    		continue;
+	}
 
     	int pos = 0;
     	char *command = get_next_token(input, &pos);
