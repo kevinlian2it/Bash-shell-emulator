@@ -43,7 +43,6 @@ char *expand_tilde(const char *path) {
 
 void change_directory(char *path) {
     char *expanded_path = expand_tilde(path);
-
     if (chdir(expanded_path) != 0) {
         fprintf(stderr, "Error: Cannot change directory to '%s'. %s.\n", expanded_path, strerror(errno));
     }
@@ -55,29 +54,23 @@ char *get_next_token(char *input, int *pos) {
     int start = *pos;
     char *token;
     int token_len = 0;
-
+    int in_quotes = 0;
     while (input[*pos] != '\0') {
         if (input[*pos] == '\"') {
+	    if(in_quotes == 0) {
+		    in_quotes = 1;
+	    } else {
+		    in_quotes = 0;
+	    }
             (*pos)++;
-            while (input[*pos] != '\0') {
-                if (input[*pos] == '\"') {
-                    (*pos)++;
-                    break;
-                }
-                token_len++;
-                (*pos)++;
-            }
-        } else {
-            while (input[*pos] != ' ' && input[*pos] != '\0') {
-                (*pos)++;
-                token_len++;
-            }
-        }
-
-        if (input[*pos] == ' ') {
-            (*pos)++;
-            break;
-        }
+            continue;
+	}
+	if(!in_quotes && input[*pos] == ' ') {
+		(*pos)++;
+		break;
+	}
+        token_len++;
+        (*pos)++;
     }
 
     if (token_len > 0) {
