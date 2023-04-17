@@ -16,11 +16,11 @@
 #define MAX_INPUT_LEN 4096
 #define MAX_NUM_TOKENS 2048
 
+volatile sig_atomic_t interrupted = 0;
 void run_shell();
 
 void sigint_handler(int sig) {
-    printf("\n");
-    run_shell();
+		interrupted = 1;
 }
 
 char *expand_tilde(const char *path) {
@@ -126,12 +126,16 @@ void run_shell() {
 	    	exit(EXIT_FAILURE);
 	}
 	if (fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
-        	fprintf(stderr, "Error: Failed to read from stdin. %s.\n", strerror(errno));
+        	if(errno == EINTR) {
+			printf("\n");
+			interrupted = 0;
+			continue;
+		}
+		fprintf(stderr, "Error: Failed to read from stdin. %s.\n", strerror(errno));
         	exit(EXIT_SUCCESS);
     	}
 
     	input[strcspn(input, "\n")] = 0;
-
     	if (!check_quotes_balance(input)) {
         	printf("Error: Unbalanced quotes, there must be an even number of quotes.\n");
         	printf("Exiting...\n");
@@ -189,6 +193,10 @@ void run_shell() {
             		if (waitpid(pid, &status, 0) < 0) {
                 		fprintf(stderr, "Error: wait() failed. %s.\n", strerror(errno));
             		}
+			if(interrupted) {
+				printf("\n");
+				interrupted = 0;
+			}
         	}
     	}
     	free(command);
