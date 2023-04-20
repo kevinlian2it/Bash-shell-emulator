@@ -21,6 +21,8 @@ void run_shell();
 
 void sigint_handler(int sig) {
 		interrupted = 1;
+		printf("\n");
+		fflush(stdout);
 }
 
 char *expand_tilde(const char *path) {
@@ -112,8 +114,13 @@ void run_shell() {
     char input[MAX_INPUT_LEN];
     char cwd[MAX_PATH_SIZE];
 
+    struct sigaction sa;
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
     while (1) {
-	if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+	if (sigaction(SIGINT, &sa, NULL) < 0) {
         	fprintf(stderr, "Error: Cannot register signal handler. %s.\n", strerror(errno));
         	exit(EXIT_FAILURE);
     	}
@@ -125,7 +132,6 @@ void run_shell() {
 	}
 	if (fgets(input, MAX_INPUT_SIZE, stdin) == NULL) {
         	if(errno == EINTR) {
-			printf("\n");
 			interrupted = 0;
 			continue;
 		}
@@ -186,13 +192,16 @@ void run_shell() {
 			}
         	} else {
             		int status;
-            		if (waitpid(pid, &status, 0) < 0) {
+            		while (waitpid(pid, &status, 0) > 0) {
+            		
+			   if(interrupted) {
+				interrupted = 0;
+				break;
+			   }
+			}
+			if (status < 0) {
                 		fprintf(stderr, "Error: wait() failed. %s.\n", strerror(errno));
             		}
-			if(interrupted) {
-				printf("\n");
-				interrupted = 0;
-			}
         	}
     	}
     	free(command);
